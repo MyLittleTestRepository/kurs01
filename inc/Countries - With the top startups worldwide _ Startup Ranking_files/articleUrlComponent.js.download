@@ -1,0 +1,92 @@
+/*!
+ * ArticleUrlComponent Plugin
+ * 
+ * article/articleUrlComponent.js
+ */
+
+(function($) {
+    
+    $.fn.articleUrlComponent = function (options) {
+        var self           = this;
+        var loading        = false;
+        var currentArticle = null;
+        
+        var options = $.extend({
+            multiple: false,
+        }, options);
+        
+        $("#article_url").on("input paste", function (e) {
+            if (loading) {
+                return;
+            }
+            
+            loading = true;
+            var url = e.originalEvent.clipboardData.getData("text");
+            
+            setTimeout(function () {
+                loadUrl(url);
+                loading = false;
+            }, 100);
+        });
+        
+        $("#article_container .button-add").click(function (e) {
+            e.preventDefault();
+            
+            var data = self.select2("data");
+            var text = currentArticle.publisher ? currentArticle.publisher + " - " + currentArticle.title : currentArticle.title;
+            data.push({ id: currentArticle.id, text: text });
+            self.select2("data", data);
+            
+            $("#article_url").val("");
+            $("#article_container").hide();
+        });
+        
+        var loadUrl = function (url) {
+            var articleContainer      = $("#article_container");
+            var articleContainerError = $("#article_container_error");
+            
+            $.ajax({
+                type        : "GET",
+                url         : Routing.generate("genboo_article_article_load_url", { url: encodeURIComponent(url) }),
+                dataType    : "json",
+                cache       : false,
+                beforeSend  : function () {
+                    articleContainer.hide();
+                    articleContainerError.hide();
+                    
+                    var loader = $("#loader").clone();
+                    loader.attr("id", "article_loader");
+                    loader.show();
+                    
+                    $("#article_container").before(loader);
+                    $("#article_url").prop("disabled", true);
+                },
+                success     : function (data) {
+                    $("#article_loader").remove();
+                    $("#article_url").prop("disabled", false);
+                    
+                    if (data.error) {
+                        articleContainerError.find(".error").text(data.error);
+                        articleContainerError.show();
+                        return;
+                    }
+                    
+                    currentArticle = data.article;
+                    articleContainer.find(".article-image a").attr("href", data.article.fullUrl);
+                    articleContainer.find(".article-image img").attr("src", data.article.imageUrl);
+                    articleContainer.find(".article-title a").attr("href", data.article.fullUrl).text(data.article.title);
+                    articleContainer.find(".article-publisher-text").text(data.article.publisher ? data.article.publisher + " - " : "");
+                    articleContainer.find(".article-author").text(data.article.author ? data.article.author + " - " : "");
+                    articleContainer.find(".article-date").text(data.article.date);
+                    articleContainer.find(".article-description").text(data.article.description);
+                    articleContainer.show();
+                    
+                    if (!options.multiple) {
+                        articleContainer.find(".button-add").hide();
+                        self.val(data.article.id);
+                    }
+                }
+            });
+        };
+    };
+}(jQuery));

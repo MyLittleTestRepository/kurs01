@@ -1,0 +1,149 @@
+/*!
+ * layout/main.js
+ */
+
+$(document).ready(function () {
+    // Search
+    var cache = {};
+    var applySearchAutocompleter = function (element) {
+        element.autocomplete({
+            source   : function (request, response) {
+                var term = request.term;
+                if (term in cache) {
+                    response(cache[term]);
+                    return;
+                }
+                
+                $.ajax({
+                    url     : Routing.generate("genboo_search_search_search"),
+                    dataType: "json",
+                    data    : { term: request.term },
+                    success : function (data) {
+                        cache[term] = data;
+                        response(data);
+                    }
+                });
+            },
+            select   : function (event, ui) {
+                location.href = ui.item.url;
+            },
+        }).data("ui-autocomplete")._renderItem = function (ul, item) {
+            var element       = $("<li class='search-item' />");
+            var anchor        = $("<a class='search-item-link' />");
+            var imgContainer  = $("<div class='search-item-image-container' />");
+            var img           = $("<img class='search-item-image' />").attr("src", item.imageUrl);
+            var spanContainer = $("<span class='search-item-span-container' />");
+            var spanContInner = $("<span class='search-item-span-cont-inner' />");
+            
+            spanContainer.append(spanContInner);
+            spanContInner.append($("<span class='search-item-span-name' />").text(item.name));
+            spanContInner.append($("<span class='search-item-span-type' />").text(item.type));
+            
+            imgContainer.append(img);
+            anchor.append(imgContainer).append(spanContainer);
+            element.append(anchor);
+            ul.append(element);
+            
+            return element;
+        };
+    };
+    
+    applySearchAutocompleter($("#search"));
+    applySearchAutocompleter($("#sm-search"));
+    
+    //-------------------------------------------------------------------------------------
+   /* 
+    $("#search,#sm-search").keypress(function (e) {
+        if (e.which == 13) {
+            search($(this).val());
+        }
+    });
+    
+    $("#search-button").click(function () { search($("#search").val()); });
+    $("#sm-search-button").click(function () { search($("#sm-search").val()); });
+    
+    var search = function (name) {
+        location.href = Routing.generate("genboo_main_search_search", {"name": name});
+    }*/
+    //-------------------------------------------------------------------------------------
+});
+
+/************************** Base *****************************************/
+$(document).ready(function () {
+  $('.flexslider').flexslider({
+    animation: "slide",
+    controlNav: "thumbnails",
+    directionNav: false
+  });
+});
+
+function initCollapsables(){
+  $('[data-collapse]').collapse();
+}
+
+$(document).ready(function(){ "use strict";
+    initCollapsables();
+});
+/*************************************************************************/
+
+/************************** Chrome Extension & Mobile Notifications *****************************************/
+
+$(document).ready(function () {
+    function createCookie(name, value, days) {
+        var expires = "";
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days*24*60*60*1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + value + expires + "; path=/";
+    }
+    
+    function readCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0;i < ca.length;i++) {
+            var c = ca[i];
+            while (c.charAt(0)==' ') c = c.substring(1,c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+        }
+        return null;
+    }
+    
+    function eraseCookie(name) {
+        createCookie(name,"",-1);
+    }
+    
+    var isChrome = !!window.chrome && !!window.chrome.webstore;
+    if (isChrome) {
+        setTimeout(function() {
+            $("#chromeNotifToutClose").click(function() {
+                $("#chromeNotifTout").hide();
+                createCookie("extensionClosed", true, 7);
+            });
+            
+            var chromeNotifToutClose = readCookie("extensionClosed");
+            chrome.runtime.sendMessage("mpfckdfdnhfhjkkbnbojggahfabmmpad", { action: "version" },
+            function (reply) {
+                if (!reply && !chromeNotifToutClose) {
+                    $("#chromeNotifTout").show();
+                }
+            });
+        }, 5000);
+    }
+    
+    var isAndroidMobile = navigator.userAgent.indexOf("Android") != -1 && $(window).width() < 600;
+    if (isAndroidMobile) {
+        setTimeout(function() {
+            $("#androidNotifToutClose").click(function() {
+                $("#androidNotifTout").hide();
+                createCookie("androidNotifToutClose", true, 7);
+            });
+            
+            var androidNotifToutClose = readCookie("androidNotifToutClose");
+            if (!androidNotifToutClose) {
+                $("#androidNotifTout").show();
+            }
+        }, 3000);
+    }
+});

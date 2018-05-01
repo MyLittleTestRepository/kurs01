@@ -1,0 +1,129 @@
+/* Collapsables.js
+© 2013 Juan-Pablo Scaletti (@jpscaletti)
+MIT License
+*/
+(function($){ "use strict";
+
+  function isTarget(test, target){
+    return test === target || !! $(target).find(test).length;
+  }
+
+  function isTouch(){
+    return $('html').hasClass('touch');
+  }
+
+  function fireOn($el) {
+    if (isTouch()) {
+      return 'click';
+    }
+    return $el.attr('data-event') || 'click';
+  }
+
+  var Collapse = function (el) {
+    var self = this;
+    var $el = this.$el = $(el);
+    this.$target = $($el.attr('data-collapse'));
+    this.textOpen = $el.attr('data-text-open');
+    this.textClose = $el.attr('data-text-close');
+    this.classOpen = $el.attr('data-class-open') || 'active';
+
+    var twait = null;
+
+    function setupHover(){
+      $el.hover(
+        function(e){
+          twait = setTimeout(function(){
+            self.show();
+          }, 260);
+        },
+        function(e){
+          clearTimeout(twait);
+          if (! isTarget(e.toElement, self.$target[0])){
+            self.hide();
+          }
+        }
+      );
+
+      self.$target.hover(
+        function(e){
+          self.$target.stop(true, true).slideDown(0);
+        },
+        function(e){
+          if (! isTarget(e.toElement, $el[0])){
+            self.hide();
+          }
+        }
+      );
+    }
+
+    function setupClick(){
+      $el.on('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        self.toggle();
+        return false;
+      });
+    }
+
+    fireOn($el) === 'hover' ? setupHover() : setupClick();
+  };
+
+  Collapse.prototype = {
+    constructor: Collapse,
+    speed: 400,
+    easing: 'easeOutExpo',
+
+    show: function () {
+      if (this.$target.is(':visible')){
+        return;
+      }
+      var self = this;
+      this.$el.addClass(this.classOpen);
+      if (self.textOpen) {
+        self.$el.find('a').text(self.textOpen);
+      }
+      this.$target.stop(true, true)
+        .slideDown(this.speed, this.easing,
+          function(){
+            self.$el.trigger('collapse.show');
+          }
+        );
+    },
+
+    hide: function () {
+      if (!this.$target.is(':visible')){
+        return;
+      }
+      var self = this;
+      this.$el.removeClass(this.classOpen);
+      if (self.textClose) {
+        self.$el.find('a').text(self.textClose);
+      }
+      this.$target.stop(true, true).slideUp(this.speed, this.easing,
+        function(){
+          self.$el.trigger('collapse.hide');
+        });
+    },
+
+    toggle: function () {
+      if (this.$target.is(':visible')){
+        this.hide();
+      } else {
+        this.show();
+      }
+    }
+  };
+
+  $.fn.collapse = function(){
+    return this.each(function(){
+      var $this = $(this);
+      var data = $this.data('collapsable');
+      if (!data){
+        $this.data('collapsable', new Collapse(this));
+      }
+    });
+  };
+
+  $.fn.collapse.Constructor = Collapse;
+
+}(window.jQuery));

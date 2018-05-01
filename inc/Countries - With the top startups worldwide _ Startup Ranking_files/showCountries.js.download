@@ -1,0 +1,73 @@
+/*!
+ * genboorank/js/ranking/showCountries.js
+ */
+$(document).ready(function ()
+{
+	Highcharts.mapChart("map-container", {
+        title: {
+            text: ""
+        },
+        legend: {
+            title: {
+                text: "Startups per Country",
+                style: {
+                    color: (Highcharts.theme && Highcharts.theme.textColor) || "black"
+                }
+            }
+        },
+        mapNavigation: {
+            enabled: true,
+            enableDoubleClickZoomTo: true,
+            buttonOptions: {
+                verticalAlign: "bottom"
+            }
+        },
+        colorAxis: {
+            min: 1,
+            max: countries.maxValue,
+        },
+        tooltip: {
+            backgroundColor: "none",
+            borderWidth: 0,
+            shadow: false,
+            useHTML: true,
+            padding: 0,
+            hideDelay: 5000,
+            pointFormat: '<div style="margin-top: 5px;"> <div style="vertical-align: middle; display: inline-block;" class="f32"><span class="flag {point.flag}"></span></div> <div style="vertical-align: middle; display: inline-block;"> {point.name}: <b>{point.formattedValue}</b></div></div>',
+            positioner: function () {
+                return { x: 0, y: 350 };
+            }
+        },
+        plotOptions: {
+            series: {
+                events: {
+                    click: function (e) {
+                        location.href = Routing.generate("genboo_rank_ranking_show",{ "countrySlug": e.point.slug });
+                    }
+                }
+            }
+        },
+        series: [{
+            data: countries.data,
+            dataLabels: {
+                enabled: true,
+                color: "#3589D3",
+                useHTML: true,
+                format: '<span style="font-size: 110%;">{point.formattedValue}</span>'
+            },
+            mapData: Highcharts.maps["custom/world"],
+            joinBy: ["iso-a2", "code"],
+            name: "Number of Startups",
+            states: {
+                hover: {
+                    color: "#4AD478"
+                }
+            },
+            tooltip: {
+                valueSuffix: " startups"
+            }
+        }],
+        exporting: { enabled: false },
+        credits: { enabled: false }
+    });
+});

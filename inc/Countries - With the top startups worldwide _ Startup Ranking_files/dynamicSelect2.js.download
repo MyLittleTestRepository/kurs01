@@ -1,0 +1,48 @@
+/*!
+ * DynamicSelect2 Plugin
+ * 
+ * custom/dynamicSelect2.js
+ */
+
+(function($) {
+ 
+    $.fn.dynamicSelect2 = function (options) {
+        var options = $.extend({
+            minimumInputLength: 1,
+            multiple          : false,
+            placeholder       : "My data",
+        }, options);
+        
+        this.select2({
+            ajax: {
+                url     : options.url,
+                dataType: "json",
+                data    : function (term, page) {
+                    return { name: term };
+                },
+                results: function (data, page) {
+                    return { results: data };
+                }
+            },
+            initSelection: function (element, callback) {
+                var ids = $(element).val();
+                
+                if (ids !== "") {
+                    $.ajax(options.url, {
+                        data    : { ids: ids },
+                        dataType: "json"
+                    }).done(function (data) {
+                        data = options.multiple ? data : data[0];
+                        callback(data);
+                    });
+                }
+            },
+            placeholder       : options.placeholder,
+            minimumInputLength: options.minimumInputLength,
+            multiple          : options.multiple
+        });
+        
+        return this;
+    };
+    
+}(jQuery));
